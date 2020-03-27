@@ -19,6 +19,7 @@ var svg = d3
     .append("svg")
     .attr("width", svgWidth)
     .attr("height", svgHeight);
+   
 
 // Append to an SVG group    
 var chartGroup = svg.append("g")
@@ -28,24 +29,28 @@ var chartGroup = svg.append("g")
     
 // Import data from external CSV    
 d3.csv("assets/data/data.csv").then(function(stateDemographicData) {
-    console.log(stateDemographicData);
+    //console.log(stateDemographicData);
     
     //Create a function to parse the income and age data
     stateDemographicData.forEach(function(data) {
         data.healthcare = +data.healthcare; 
-        data.medianIncome = +data.medianIncome;
+        data.income = +data.income;
     });
+    console.log(stateDemographicData);
 
     //Create the x/y linear scaling functions
 
     var xLinScale = d3.scaleLinear()
         //.classed("x-axis", true)
-        .domain([0, d3.max(stateDemographicData, d => d.medianIncome)])
+        //.domain([0, ])
+        .domain([d3.min(stateDemographicData, d => d.income)- 1000, d3.max(stateDemographicData, d => d.income)])
         .range([0, width]);
+        console.log(d3.max(stateDemographicData, d =>d.income));
 
     var yLinScale = d3.scaleLinear()
         .domain([0, d3.max(stateDemographicData, d => d.healthcare)])
         .range([height, 0]);    
+        console.log(d3.max(stateDemographicData, d => d.healthcare));
 
     //Axis functions    
     var bottomAxis = d3.axisBottom(xLinScale);
@@ -54,9 +59,7 @@ d3.csv("assets/data/data.csv").then(function(stateDemographicData) {
     //Append the X-axis
     chartGroup.append("g")
         .attr("transform", `translate(0, ${height})`)
-        .call(bottomAxis);
-    // chartGroup.append("g")
-    //     .call(leftAxis);    
+        .call(bottomAxis);   
 
     //Append the Y-Axis
     chartGroup.append("g")
@@ -64,34 +67,34 @@ d3.csv("assets/data/data.csv").then(function(stateDemographicData) {
         .attr("stroke", "black")
         .call(leftAxis);   
     
+    //State Abbreviations
+    var stateAbbr = chartGroup
+        .selectAll("text")
+        .data(stateDemographicData)
+        .enter()
+        .append("text")
+        .text(d => d.abbr)
+        .attr("dx", d => xLinScale(d.income) - 10)
+        .attr("dy", d=> yLinScale(d.healthcare) + 3)
+        .style("font", "10 px calibri")
+        .style("font-weight", "bold")
+        .style("fill", "black");
+
     //Scatter plot circles
     var scatterDots = chartGroup.selectAll("circle")
         .data(stateDemographicData)
         .enter()
         .append("circle")
-        .attr("cx", d => xLinScale(d.medianIncome))
+        .attr("cx", d => xLinScale(d.income))
         .attr("cy", d => yLinScale(d.healthcare))
-        .attr("r", "10")
+        .attr("r", "14")
         .attr("fill", "navy")
-        .attr("opacity", ".5");
-
-    //State Abbreviations
-    scatterDots.selectAll("text")
-        .data(stateDemographicData)
-        .enter()
-        .append("text")
-        .text(d => d.abbr)
-        .attr("dy", "2.35em")
-        .attr("x", d => xLinScale(d.medianIncome))
-        .attr("y", d=> yLinScale(d.healthcare))
-        .style("font", "10 px calibri")
-        .style("font-weight", "bold")
-        .style("fill", "black");
+        .attr("opacity", ".5")
 
     //Append Y Axis
     chartGroup.append("text")
         .attr("transform", "rotate(-90)")    
-        .attr("y", 0 - margin.left + 40)
+        .attr("y", 0 - margin.left + 20)
         .attr("x", 0 - (height/2) - 40)
         .attr("class", "axisText")
         .text("Availability to Healthcare");
@@ -101,4 +104,5 @@ d3.csv("assets/data/data.csv").then(function(stateDemographicData) {
     .attr("transform", `translate(${(width/2)}, ${height + margin.top + 25})`)
     .attr("class", "axisText")
     .text("Median Income ($)")
+
 });
